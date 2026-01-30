@@ -53,12 +53,12 @@ MODULE_PATH = __name__
 
 SUPPORTED_MODELS = {
     'ROSA': f'{MODULE_PATH}.ROSA',
-    'HGT_Multi': f'{MODULE_PATH}.HGT_Multi',
-    'HAN_Multi': f'{MODULE_PATH}.HAN_Multi',
+    'COA_Multi': f'{MODULE_PATH}.COA_Multi',
+    'AOA_Multi': f'{MODULE_PATH}.AOA_Multi',
     'MAGNN_Multi': f'{MODULE_PATH}.MAGNN_Multi',
     'RGAT_Multi': f'{MODULE_PATH}.RGAT_Multi',
-    'HAN': f'{MODULE_PATH}.HAN',
-    'HGT': f'{MODULE_PATH}.HGT',
+    'AOA': f'{MODULE_PATH}.AOA',
+    'COA': f'{MODULE_PATH}.COA',
 }
 
 __all__ = [

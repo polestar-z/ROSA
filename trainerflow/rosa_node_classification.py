@@ -281,13 +281,13 @@ class ROSANodeClassification(BaseFlow):
         train_idx = self._get_resampled_train_idx() if self.use_resampling else self.train_idx
 
         if self.use_consistency_loss and hasattr(self.model, 'consistency_loss') and self.model.consistency_loss is not None:
-            logits_dict, h_hgt_dict, h_han_dict = self.model(self.hg, h_dict, return_branch_features=True)
+            logits_dict, h_coa_dict, h_aoa_dict = self.model(self.hg, h_dict, return_branch_features=True)
             logits = logits_dict[self.category]
 
             task_loss = self.loss_fn(logits[train_idx], self.labels[train_idx])
 
             train_mask = {self.category: train_idx}
-            consistency_loss = self.model.consistency_loss(h_hgt_dict, h_han_dict, mask=train_mask)
+            consistency_loss = self.model.consistency_loss(h_coa_dict, h_aoa_dict, mask=train_mask)
 
             total_loss = task_loss + self.lambda_consistency * consistency_loss
         else:

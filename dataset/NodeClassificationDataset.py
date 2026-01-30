@@ -319,7 +319,7 @@ class ChemistryDatasetFiltered(NodeClassificationDataset):
     - If a sample only has rare labels, remove the entire sample
 
     Usage:
-        python main.py --model HAN --task node_classification --dataset my_custom_node_classification_filtered --gpu 0
+        python main.py --model AOA --task node_classification --dataset my_custom_node_classification_filtered --gpu 0
 
     Parameters:
         min_label_samples: Minimum number of samples required for a label to be considered common (default: 10)

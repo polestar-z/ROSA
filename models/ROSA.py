@@ -3,8 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import dgl
 from . import BaseModel, register_model
-from .HGT import HGTConv
-from .HAN import HANLayer
+from .COA import COAConv
+from .AOA import AOALayer
 from ..utils.utils import to_hetero_feat, extract_metapaths, get_ntypes_from_canonical_etypes
 
 
@@ -19,14 +19,14 @@ class FusionModule_Original(nn.Module):
             for ntype in ntypes
         })
 
-    def forward(self, h_hgt_dict, h_han_dict):
+    def forward(self, h_coa_dict, h_aoa_dict):
         h_fused_dict = {}
-        for ntype in h_hgt_dict.keys():
-            if ntype in h_han_dict:
-                h_concat = torch.cat([h_hgt_dict[ntype], h_han_dict[ntype]], dim=-1)
+        for ntype in h_coa_dict.keys():
+            if ntype in h_aoa_dict:
+                h_concat = torch.cat([h_coa_dict[ntype], h_aoa_dict[ntype]], dim=-1)
                 h_fused_dict[ntype] = self.linear_dict[ntype](h_concat)
             else:
-                h_fused_dict[ntype] = h_hgt_dict[ntype]
+                h_fused_dict[ntype] = h_coa_dict[ntype]
         return h_fused_dict
 
 
@@ -68,27 +68,27 @@ class GatedFusionModule(nn.Module):
 
         self.dropout = nn.Dropout(dropout)
 
-    def forward(self, h_hgt_dict, h_han_dict):
+    def forward(self, h_coa_dict, h_aoa_dict):
         h_fused_dict = {}
 
-        for ntype in h_hgt_dict.keys():
-            if ntype not in h_han_dict:
-                h_fused_dict[ntype] = h_hgt_dict[ntype]
+        for ntype in h_coa_dict.keys():
+            if ntype not in h_aoa_dict:
+                h_fused_dict[ntype] = h_coa_dict[ntype]
                 continue
 
-            h_hgt = h_hgt_dict[ntype]
-            h_han = h_han_dict[ntype]
+            h_coa = h_coa_dict[ntype]
+            h_aoa = h_aoa_dict[ntype]
 
-            h_concat = torch.cat([h_hgt, h_han], dim=-1)
+            h_concat = torch.cat([h_coa, h_aoa], dim=-1)
 
             if self.gate_type == 'basic':
                 gate = self.gate_dict[ntype](h_concat)
-                h_fused = gate * h_hgt + (1 - gate) * h_han
+                h_fused = gate * h_coa + (1 - gate) * h_aoa
 
             elif self.gate_type == 'bidirectional':
                 gate1 = self.gate1_dict[ntype](h_concat)
                 gate2 = self.gate2_dict[ntype](h_concat)
-                h_fused = gate1 * h_hgt + gate2 * h_han
+                h_fused = gate1 * h_coa + gate2 * h_aoa
 
             h_fused_dict[ntype] = self.dropout(h_fused)
 
@@ -135,77 +135,77 @@ class BranchConsistencyLoss(nn.Module):
         self.loss_type = loss_type
         self.temperature = temperature
 
-    def forward(self, h_hgt_dict, h_han_dict, mask=None):
+    def forward(self, h_coa_dict, h_aoa_dict, mask=None):
         total_loss = 0.0
         num_nodes = 0
 
-        for ntype in h_hgt_dict.keys():
-            if ntype not in h_han_dict:
+        for ntype in h_coa_dict.keys():
+            if ntype not in h_aoa_dict:
                 continue
 
-            h_hgt = h_hgt_dict[ntype]
-            h_han = h_han_dict[ntype]
+            h_coa = h_coa_dict[ntype]
+            h_aoa = h_aoa_dict[ntype]
 
             if mask is not None and ntype in mask:
-                h_hgt = h_hgt[mask[ntype]]
-                h_han = h_han[mask[ntype]]
+                h_coa = h_coa[mask[ntype]]
+                h_aoa = h_aoa[mask[ntype]]
 
-            if h_hgt.size(0) == 0:
+            if h_coa.size(0) == 0:
                 continue
 
             if self.loss_type == 'cosine':
-                cosine_sim = F.cosine_similarity(h_hgt, h_han, dim=-1)
+                cosine_sim = F.cosine_similarity(h_coa, h_aoa, dim=-1)
                 loss = (1 - cosine_sim).mean()
 
             elif self.loss_type == 'l2':
-                loss = F.mse_loss(h_hgt, h_han)
+                loss = F.mse_loss(h_coa, h_aoa)
 
             elif self.loss_type == 'contrastive':
-                h_hgt = F.normalize(h_hgt, dim=-1)
-                h_han = F.normalize(h_han, dim=-1)
+                h_coa = F.normalize(h_coa, dim=-1)
+                h_aoa = F.normalize(h_aoa, dim=-1)
 
-                sim_matrix = torch.matmul(h_hgt, h_han.T) / self.temperature
+                sim_matrix = torch.matmul(h_coa, h_aoa.T) / self.temperature
 
-                labels = torch.arange(h_hgt.size(0), device=h_hgt.device)
+                labels = torch.arange(h_coa.size(0), device=h_coa.device)
                 loss = F.cross_entropy(sim_matrix, labels)
             else:
                 raise ValueError(f"Unsupported loss type: {self.loss_type}")
 
-            total_loss += loss * h_hgt.size(0)
-            num_nodes += h_hgt.size(0)
+            total_loss += loss * h_coa.size(0)
+            num_nodes += h_coa.size(0)
 
-        return total_loss / num_nodes if num_nodes > 0 else torch.tensor(0.0, device=h_hgt.device)
+        return total_loss / num_nodes if num_nodes > 0 else torch.tensor(0.0, device=h_coa.device)
 
 
 class HybridLayer(nn.Module):
-    def __init__(self, in_dim, hidden_dim, hgt_num_heads, han_num_heads,
+    def __init__(self, in_dim, hidden_dim, coa_num_heads, aoa_num_heads,
                  num_etypes, ntypes, meta_paths_dict, dropout, use_norm,
-                 exclude_persona_in_hgt=False, fusion_type='gated', gate_type='bidirectional'):
+                 exclude_persona_in_coa=False, fusion_type='gated', gate_type='bidirectional'):
         super().__init__()
         self.ntypes = ntypes
-        self.exclude_persona_in_hgt = exclude_persona_in_hgt
+        self.exclude_persona_in_coa = exclude_persona_in_coa
         self.fusion_type = fusion_type
         self.gate_type = gate_type
 
-        head_size = hidden_dim // hgt_num_heads
-        self.hgt_conv = HGTConv(
+        head_size = hidden_dim // coa_num_heads
+        self.coa_conv = COAConv(
             in_size=in_dim,
             head_size=head_size,
-            num_heads=hgt_num_heads,
+            num_heads=coa_num_heads,
             num_ntypes=len(ntypes),
             num_etypes=num_etypes,
             dropout=dropout,
             use_norm=use_norm
         )
 
-        han_out_dim = hidden_dim // han_num_heads
-        self.han_dict = nn.ModuleDict()
+        aoa_out_dim = hidden_dim // aoa_num_heads
+        self.aoa_dict = nn.ModuleDict()
         for ntype, meta_paths in meta_paths_dict.items():
-            self.han_dict[ntype] = HANLayer(
+            self.aoa_dict[ntype] = AOALayer(
                 meta_paths_dict=meta_paths,
                 in_dim=in_dim,
-                out_dim=han_out_dim,
-                layer_num_heads=han_num_heads,
+                out_dim=aoa_out_dim,
+                layer_num_heads=aoa_num_heads,
                 dropout=dropout
             )
 
@@ -228,28 +228,28 @@ class HybridLayer(nn.Module):
             raise ValueError(f"Unsupported fusion_type: {fusion_type}")
 
     def forward(self, hg, h_dict, return_branch_features=False):
-        h_hgt_dict = self._hgt_forward(hg, h_dict)
-        h_han_dict = self._han_forward(hg, h_dict)
-        h_fused_dict = self.fusion(h_hgt_dict, h_han_dict)
+        h_coa_dict = self._coa_forward(hg, h_dict)
+        h_aoa_dict = self._aoa_forward(hg, h_dict)
+        h_fused_dict = self.fusion(h_coa_dict, h_aoa_dict)
 
         if return_branch_features:
-            return h_fused_dict, h_hgt_dict, h_han_dict
+            return h_fused_dict, h_coa_dict, h_aoa_dict
         else:
             return h_fused_dict
 
-    def _hgt_forward(self, hg, h_dict):
-        if self.exclude_persona_in_hgt and 'persona' in hg.ntypes:
-            return self._hgt_forward_exclude_persona(hg, h_dict)
+    def _coa_forward(self, hg, h_dict):
+        if self.exclude_persona_in_coa and 'persona' in hg.ntypes:
+            return self._coa_forward_exclude_persona(hg, h_dict)
         else:
-            return self._hgt_forward_original(hg, h_dict)
+            return self._coa_forward_original(hg, h_dict)
 
-    def _hgt_forward_original(self, hg, h_dict):
+    def _coa_forward_original(self, hg, h_dict):
         with hg.local_scope():
             hg.ndata['h'] = h_dict
             g_homo = dgl.to_homogeneous(hg, ndata='h')
             h_homo = g_homo.ndata['h']
 
-            h_homo = self.hgt_conv(
+            h_homo = self.coa_conv(
                 g_homo,
                 h_homo,
                 g_homo.ndata['_TYPE'],
@@ -257,11 +257,11 @@ class HybridLayer(nn.Module):
                 presorted=True
             )
 
-            h_hgt_dict = to_hetero_feat(h_homo, g_homo.ndata['_TYPE'], self.ntypes)
+            h_coa_dict = to_hetero_feat(h_homo, g_homo.ndata['_TYPE'], self.ntypes)
 
-        return h_hgt_dict
+        return h_coa_dict
 
-    def _hgt_forward_exclude_persona(self, hg, h_dict):
+    def _coa_forward_exclude_persona(self, hg, h_dict):
         exclude_dst_ntype = 'persona'
         kept_etypes = []
         for canonical_etype in hg.canonical_etypes:
@@ -278,7 +278,7 @@ class HybridLayer(nn.Module):
             g_homo = dgl.to_homogeneous(hg_sub, ndata='h')
             h_homo = g_homo.ndata['h']
 
-            h_homo = self.hgt_conv(
+            h_homo = self.coa_conv(
                 g_homo,
                 h_homo,
                 g_homo.ndata['_TYPE'],
@@ -286,21 +286,21 @@ class HybridLayer(nn.Module):
                 presorted=True
             )
 
-            h_hgt_dict = to_hetero_feat(h_homo, g_homo.ndata['_TYPE'], kept_ntypes)
+            h_coa_dict = to_hetero_feat(h_homo, g_homo.ndata['_TYPE'], kept_ntypes)
 
         for ntype in self.ntypes:
-            if ntype not in h_hgt_dict and ntype in h_dict:
-                h_hgt_dict[ntype] = h_dict[ntype]
+            if ntype not in h_coa_dict and ntype in h_dict:
+                h_coa_dict[ntype] = h_dict[ntype]
 
-        return h_hgt_dict
+        return h_coa_dict
 
 
-    def _han_forward(self, hg, h_dict):
-        h_han_dict = {}
-        for ntype, han_layer in self.han_dict.items():
-            h_out = han_layer(hg, h_dict)
-            h_han_dict.update(h_out)
-        return h_han_dict
+    def _aoa_forward(self, hg, h_dict):
+        h_aoa_dict = {}
+        for ntype, aoa_layer in self.aoa_dict.items():
+            h_out = aoa_layer(hg, h_dict)
+            h_aoa_dict.update(h_out)
+        return h_aoa_dict
 
 
 @register_model('ROSA')
@@ -326,7 +326,7 @@ class ROSA(BaseModel):
             if len(meta_paths_dict) == 0:
                 ntype_meta_paths_dict[ntype] = extract_metapaths(ntype, hg.canonical_etypes)
 
-        exclude_persona_in_hgt = 'persona' in hg.ntypes
+        exclude_persona_in_coa = 'persona' in hg.ntypes
 
         fusion_type = getattr(args, 'fusion_type', 'gated')
         gate_type = getattr(args, 'gate_type', 'bidirectional')
@@ -341,14 +341,14 @@ class ROSA(BaseModel):
             hidden_dim=args.hidden_dim,
             out_dim=args.out_dim,
             num_layers=args.num_layers,
-            hgt_num_heads=args.hgt_num_heads,
-            han_num_heads=args.han_num_heads,
+            coa_num_heads=args.coa_num_heads,
+            aoa_num_heads=args.aoa_num_heads,
             num_etypes=len(hg.etypes),
             ntypes=hg.ntypes,
             meta_paths_dict=ntype_meta_paths_dict,
             dropout=args.dropout,
             use_norm=args.norm,
-            exclude_persona_in_hgt=exclude_persona_in_hgt,
+            exclude_persona_in_coa=exclude_persona_in_coa,
             fusion_type=fusion_type,
             gate_type=gate_type,
             residual_type=residual_type,
@@ -358,8 +358,8 @@ class ROSA(BaseModel):
         )
 
     def __init__(self, in_dim, hidden_dim, out_dim, num_layers,
-                 hgt_num_heads, han_num_heads, num_etypes, ntypes,
-                 meta_paths_dict, dropout, use_norm, exclude_persona_in_hgt=False,
+                 coa_num_heads, aoa_num_heads, num_etypes, ntypes,
+                 meta_paths_dict, dropout, use_norm, exclude_persona_in_coa=False,
                  fusion_type='gated', gate_type='bidirectional', residual_type='adaptive',
                  use_consistency_loss=False, consistency_loss_type='cosine', consistency_temperature=0.1):
         super().__init__()
@@ -378,14 +378,14 @@ class ROSA(BaseModel):
                 HybridLayer(
                     in_dim=layer_in_dim,
                     hidden_dim=hidden_dim,
-                    hgt_num_heads=hgt_num_heads,
-                    han_num_heads=han_num_heads,
+                    coa_num_heads=coa_num_heads,
+                    aoa_num_heads=aoa_num_heads,
                     num_etypes=num_etypes,
                     ntypes=ntypes,
                     meta_paths_dict=meta_paths_dict,
                     dropout=dropout,
                     use_norm=use_norm,
-                    exclude_persona_in_hgt=exclude_persona_in_hgt,
+                    exclude_persona_in_coa=exclude_persona_in_coa,
                     fusion_type=fusion_type,
                     gate_type=gate_type
                 )
@@ -415,16 +415,16 @@ class ROSA(BaseModel):
         })
 
     def forward(self, hg, h_dict, return_branch_features=False):
-        h_hgt_last = None
-        h_han_last = None
+        h_coa_last = None
+        h_aoa_last = None
 
         for i, layer in enumerate(self.layers):
             h_dict_input = h_dict
 
             if return_branch_features:
-                h_dict, h_hgt, h_han = layer(hg, h_dict, return_branch_features=True)
-                h_hgt_last = h_hgt
-                h_han_last = h_han
+                h_dict, h_coa, h_aoa = layer(hg, h_dict, return_branch_features=True)
+                h_coa_last = h_coa
+                h_aoa_last = h_aoa
             else:
                 h_dict = layer(hg, h_dict)
 
@@ -443,6 +443,6 @@ class ROSA(BaseModel):
             out_dict[ntype] = self.output_linear[ntype](h)
 
         if return_branch_features:
-            return out_dict, h_hgt_last, h_han_last
+            return out_dict, h_coa_last, h_aoa_last
         else:
             return out_dict

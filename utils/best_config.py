@@ -3,16 +3,16 @@ BEST_CONFIGS = {
         "ROSA": {
             "general": {},
         },
-        "HAN": {
+        "AOA": {
             "general": {},
         },
-        "HAN_Multi": {
+        "AOA_Multi": {
             "general": {},
         },
-        "HGT": {
+        "COA": {
             "general": {},
         },
-        "HGT_Multi": {
+        "COA_Multi": {
             "general": {},
         },
         "MAGNN_Multi": {

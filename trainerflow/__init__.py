@@ -42,8 +42,8 @@ MODULE_PATH = __name__
 SUPPORTED_FLOWS = {
     'node_classification': f'{MODULE_PATH}.node_classification',
     'rosa_node_classification': f'{MODULE_PATH}.rosa_node_classification',
-    'han_nc_trainer': f'{MODULE_PATH}.han_trainer',
-    'hgttrainer': f'{MODULE_PATH}.hgt_trainer',
+    'aoa_nc_trainer': f'{MODULE_PATH}.aoa_trainer',
+    'coatrainer': f'{MODULE_PATH}.coa_trainer',
 }
 
 __all__ = [

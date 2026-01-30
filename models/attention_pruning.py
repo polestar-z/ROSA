@@ -8,7 +8,7 @@ Implements dynamic head pruning from section 6.2:
 - HeadImportanceTracker: attention head importance tracker
 - Utility functions
 
-Reference: HGTHAN_Optimization_Proposals.md line 682-763
+Reference: COAAOA_Optimization_Proposals.md line 682-763
 """
 
 import torch
@@ -126,7 +126,7 @@ class PrunableMultiHeadAttention(nn.Module):
     """
     Base class for prunable multi-head attention.
 
-    Provides generic head pruning features for HGT and HAN attention layers.
+    Provides generic head pruning features for COA and AOA attention layers.
 
     Features:
         - Maintain importance weights per head

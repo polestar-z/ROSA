@@ -1,7 +1,4 @@
-                      
-                     
-                                  
-
+              
 import dgl
 import torch
 import pandas as pd
@@ -87,40 +84,17 @@ class PersonaDataset(BaseDataset):
             The constructed heterogeneous graph
         """
         print(f"[Persona Dataset] Loading from {self.data_path}")
-
-                                                      
-                            
-                                                      
-                                                                         
-                                                
-
-                                                        
-                                                   
+                 
         user_nodes = pd.read_csv(f"{self.data_path}nodes/user_embedding32.csv")
         product_nodes = pd.read_csv(f"{self.data_path}nodes/product-embedding.csv")
         persona_nodes = pd.read_csv(f"{self.data_path}nodes/persona_embedding_384.csv")
         label = pd.read_csv(f"{self.data_path}lab-all.csv")
 
-                                                     
-                                                                                   
-                                                                         
-
         print(f"  [Nodes] User: {len(user_nodes)}, product: {len(product_nodes)},persona:{len(persona_nodes)}")
-
-                                                      
-                            
-                                                      
+                                                     
         user_product_edges = pd.read_csv(f"{self.data_path}edges/user-product.csv")
         product_persona_edges = pd.read_csv(f"{self.data_path}edges/product-persona.csv")
 
-                                                     
-                                                                                             
-                                                                               
-
-        print(f"  [Edges] User-product: {len(user_product_edges)},product-persona: {len(product_persona_edges)} ")
-
-                                                      
-                                      
                                                       
         data_dict = {
             ('user', 'interact', 'product'): (
@@ -149,11 +123,7 @@ class PersonaDataset(BaseDataset):
         print(f"  [Graph] Created with {graph.num_nodes()} nodes and {graph.num_edges()} edges")
         print(f"  [Graph] Node types: {graph.ntypes}")
         print(f"  [Graph] Edge types: {graph.etypes}")
-
-                                                      
-                              
-                                                      
-                                                                                            
+                                                                                          
         user_feature_cols = [col for col in user_nodes.columns
                             if 'embedding' in col.lower() or 'feature' in col.lower()]
         product_feature_cols = [col for col in product_nodes.columns
@@ -193,11 +163,6 @@ class PersonaDataset(BaseDataset):
 
         print(f"  [Features] User: {user_features.shape}, product: {product_features.shape}, persona: {persona_features.shape}")
 
-                                                      
-                            
-                                                      
-                                                              
-
         target_node_type = 'user'
 
         print(f"  [Debug] Label column dtype: {label['labels'].dtype}")
@@ -235,14 +200,9 @@ class PersonaDataset(BaseDataset):
 
         print(f"  [Labels] User labels shape: {labels.shape}, Num classes: {self.num_classes}")
         print(f"  [Labels] Sample label vector: {labels[0][:20]}...")                      
-
-
-                                                
+                                               
         self.target_node_type = target_node_type
-
-                                                      
-                                                
-                                                      
+                                                     
         target_nodes_df = user_nodes 
 
         if 'train_mask' in target_nodes_df.columns:

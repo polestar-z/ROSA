@@ -17,7 +17,7 @@ class ClassAwareEdgeWeighting(nn.Module):
     - Mitigate class imbalance where tail classes are dominated by head-class weights
 
     Math:
-        Original HGT: w_{etype} is a global scalar shared by all classes
+        Original COA: w_{etype} is a global scalar shared by all classes
         Here: w_{class, etype, head} is class-specific
 
     Args:

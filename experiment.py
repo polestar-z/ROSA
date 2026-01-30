@@ -33,8 +33,8 @@ class Experiment(object):
 
     default_conf_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
     specific_trainerflow = {                                                                              
-        'HAN': {
-            'node_classification': 'han_nc_trainer',
+        'AOA': {
+            'node_classification': 'aoa_nc_trainer',
         },
         'ROSA': {
             'node_classification': 'rosa_node_classification',
