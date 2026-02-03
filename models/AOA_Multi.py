@@ -11,19 +11,6 @@ from ..utils.utils import extract_metapaths, get_ntypes_from_canonical_etypes
 @register_model('AOA_Multi')
 class AOA_Multi(BaseModel):
     r"""
-    AOA model for multi-label node classification.
-
-    This is a modified version of AOA that supports multi-label classification on heterogeneous graphs.
-    The key difference from the original AOA is that this model only returns outputs for the target node type
-    instead of all node types, which is required for multi-label classification tasks.
-
-    Based on the paper: Heterogeneous Graph Attention Network <https://arxiv.org/pdf/1903.07293.pdf>
-
-    Key modifications:
-    - Automatic target node type detection
-    - Only returns output for the target node type (required for multi-label classification)
-    - Compatible with multi-label classification datasets (your_dataset_filtered, persona, imdb)
-
     Parameters
     ------------
     ntype_meta_paths_dict : dict[str, dict[str, list[etype]]]

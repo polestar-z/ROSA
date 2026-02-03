@@ -71,7 +71,7 @@ class IMDBDataset(BaseDataset):
             Dataset name
         data_path : str
             Base path to the dataset directory containing nodes/ and edges/ folders
-            If None, will use default path: './openhgnn/dataset/data/imdb/'
+            If None, will use default path: './imdb/'
         logger : optional
             Logger instance
         """
@@ -82,7 +82,7 @@ class IMDBDataset(BaseDataset):
 
                                                
         if data_path is None:
-            self.data_path = './openhgnn/dataset/data/imdb/'
+            self.data_path = './imdb/'
         else:
             self.data_path = data_path
 
@@ -264,7 +264,7 @@ class IMDBDataset(BaseDataset):
 
 if __name__ == '__main__':
                               
-    dataset = IMDBDataset(name='imdb', data_path='./openhgnn/dataset/data/imdb/')
+    dataset = IMDBDataset(name='imdb', data_path='./imdb/')
     print("Dataset loaded successfully!")
     print(f"Graph: {dataset.graph}")
     print(f"Num classes: {dataset.num_classes}")

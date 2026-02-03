@@ -54,7 +54,7 @@ class ROSANodeClassification(BaseFlow):
         self.labels = self.task.get_labels().to(self.device)
         self.num_nodes_dict = {ntype: self.hg.num_nodes(ntype) for ntype in self.hg.ntypes}
         self.to_homo_flag = getattr(self.model, 'to_homo_flag', False)
-        self.writer = SummaryWriter(f'./openhgnn/output/{self.model_name}/')
+        self.writer = SummaryWriter(f'./output/{self.model_name}/')
 
         self.is_multi_label = getattr(args, 'multi_label', False)
         self.threshold = getattr(args, 'threshold', 0.5)

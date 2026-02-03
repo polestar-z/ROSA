@@ -12,7 +12,7 @@ class BaseDataset(ABC):
 
     def load_graph_from_disk(self, file_path):
         """
-        load graph from disk and the file path of graph is generally stored in ``./openhgnn/dataset/``.
+        load graph from disk and the file path of graph is generally stored in ``./dataset/``.
 
         Parameters
         ----------

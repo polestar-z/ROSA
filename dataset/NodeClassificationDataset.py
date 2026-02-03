@@ -1,9 +1,9 @@
 import torch as th
 from . import BaseDataset, register_dataset
 import torch
-from .your_dataset_filtered import YourDatasetFiltered
+from .cite_dataset import CITEDataset
 from .imdb_dataset import IMDBDataset
-from .persona_dataset import PersonaDataset
+from .amazon_dataset import AmazonDataset
 
 @register_dataset('node_classification')
 class NodeClassificationDataset(BaseDataset):
@@ -142,7 +142,7 @@ class IMDBNodeClassification(NodeClassificationDataset):
         super(IMDBNodeClassification, self).__init__(*args, **kwargs)
 
                                                                       
-        data_path = kwargs.get('data_path', './openhgnn/dataset/data/imdb/')
+        data_path = kwargs.get('data_path', './imdb/')
 
                                                                
         dataset = IMDBDataset(name='imdb', data_path=data_path, logger=kwargs.get('logger'))
@@ -217,22 +217,22 @@ class IMDBNodeClassification(NodeClassificationDataset):
         return train_idx, val_idx, test_idx
 
 
-@register_dataset('persona_node_classification')
-class PersonaNodeClassification(NodeClassificationDataset):
+@register_dataset('amazon_node_classification')
+class AmazonNodeClassification(NodeClassificationDataset):
     """
-    Persona Dataset for Node Classification
+    Amazon Dataset for Node Classification
 
     Usage:
-        python main.py --model ROSA --task node_classification --dataset persona_node_classification --gpu 0
+        python main.py --model ROSA --task node_classification --dataset amazon_node_classification --gpu 0
     """
     def __init__(self, *args, **kwargs):
-        super(PersonaNodeClassification, self).__init__(*args, **kwargs)
+        super(AmazonNodeClassification, self).__init__(*args, **kwargs)
 
                                                                       
-        data_path = kwargs.get('data_path', './openhgnn/dataset/data/persona/')
+        data_path = kwargs.get('data_path', './amazon/')
 
                       
-        dataset = PersonaDataset(name='persona', data_path=data_path, logger=self.logger)
+        dataset = AmazonDataset(name='amazon', data_path=data_path, logger=self.logger)
         self.g = dataset.graph
 
                                                              
@@ -260,9 +260,9 @@ class PersonaNodeClassification(NodeClassificationDataset):
             }
 
 
-        print(f"[Persona NC] Loaded graph with {self.g.num_nodes()} nodes")
-        print(f"[Persona NC] Target: {self.category}, Classes: {self.num_classes}")
-        print(f"[Persona NC] Node types: {self.g.ntypes}")
+        print(f"[Amazon NC] Loaded graph with {self.g.num_nodes()} nodes")
+        print(f"[Amazon NC] Target: {self.category}, Classes: {self.num_classes}")
+        print(f"[Amazon NC] Node types: {self.g.ntypes}")
 
     def get_labels(self):
         """Return labels for the target node type"""
@@ -287,7 +287,7 @@ class PersonaNodeClassification(NodeClassificationDataset):
             val_idx = torch.nonzero(val_mask, as_tuple=False).squeeze()
             test_idx = torch.nonzero(test_mask, as_tuple=False).squeeze()
 
-            print(f"[Persona NC] Using existing masks - Train: {len(train_idx)}, Val: {len(val_idx)}, Test: {len(test_idx)}")
+            print(f"[Amazon NC] Using existing masks - Train: {len(train_idx)}, Val: {len(val_idx)}, Test: {len(test_idx)}")
         else:
                                             
             num_nodes = self.g.number_of_nodes(self.category)
@@ -300,7 +300,7 @@ class PersonaNodeClassification(NodeClassificationDataset):
             val_idx = indices[n_train:n_train + n_val]
             test_idx = indices[n_train + n_val:]
 
-            print(f"[Persona NC] Random split - Train: {len(train_idx)}, Val: {len(val_idx)}, Test: {len(test_idx)}")
+            print(f"[Amazon NC] Random split - Train: {len(train_idx)}, Val: {len(val_idx)}, Test: {len(test_idx)}")
 
         self.train_idx = train_idx
         self.valid_idx = val_idx
@@ -309,23 +309,23 @@ class PersonaNodeClassification(NodeClassificationDataset):
         return train_idx, val_idx, test_idx
 
 
-@register_dataset('my_custom_node_classification_filtered')
-class ChemistryDatasetFiltered(NodeClassificationDataset):
+@register_dataset('cite_node_classification')
+class CITENodeClassification(NodeClassificationDataset):
     """
-    Chemistry Dataset with Rare Label Filtering for Node Classification
+    CITE Dataset with Rare Label Filtering for Node Classification
 
     This dataset automatically filters out rare labels:
     - If a sample has both rare and common labels, keep the sample but remove rare labels
     - If a sample only has rare labels, remove the entire sample
 
     Usage:
-        python main.py --model AOA --task node_classification --dataset my_custom_node_classification_filtered --gpu 0
+        python main.py --model AOA --task node_classification --dataset cite_node_classification --gpu 0
 
     Parameters:
         min_label_samples: Minimum number of samples required for a label to be considered common (default: 10)
     """
     def __init__(self, *args, **kwargs):
-        super(ChemistryDatasetFiltered, self).__init__(*args, **kwargs)
+        super(CITENodeClassification, self).__init__(*args, **kwargs)
 
                                                      
         min_label_samples = 10           
@@ -335,8 +335,8 @@ class ChemistryDatasetFiltered(NodeClassificationDataset):
                 min_label_samples = args_obj.min_label_samples
 
                                    
-        dataset = YourDatasetFiltered(
-            name='your_dataset_filtered',
+        dataset = CITEDataset(
+            name='cite_dataset',
             raw_dir='',
             min_label_samples=min_label_samples
         )
@@ -351,10 +351,10 @@ class ChemistryDatasetFiltered(NodeClassificationDataset):
         if hasattr(dataset.graph, 'meta_paths_dict'):
             self.meta_paths_dict = dataset.graph.meta_paths_dict
 
-        print(f"[ChemistryDatasetFiltered] Initialized with min_label_samples={min_label_samples}")
-        print(f"[ChemistryDatasetFiltered] Graph: {self.g.num_nodes('paper')} paper nodes")
-        print(f"[ChemistryDatasetFiltered] Target: {self.category}, Classes: {self.num_classes}")
-        print(f"[ChemistryDatasetFiltered] Multi-label: {self.multi_label}")
+        print(f"[CITEDatasetFiltered] Initialized with min_label_samples={min_label_samples}")
+        print(f"[CITEDatasetFiltered] Graph: {self.g.num_nodes('paper')} paper nodes")
+        print(f"[CITEDatasetFiltered] Target: {self.category}, Classes: {self.num_classes}")
+        print(f"[CITEDatasetFiltered] Multi-label: {self.multi_label}")
 
     def get_labels(self):
         """Return multi-label FloatTensor for the target node type"""
@@ -406,6 +406,6 @@ class ChemistryDatasetFiltered(NodeClassificationDataset):
         self.valid_idx = valid_idx
         self.test_idx = test_idx
 
-        print(f"[ChemistryDatasetFiltered] Split - Train: {len(train_idx)}, Val: {len(valid_idx)}, Test: {len(test_idx)}")
+        print(f"[CITEDatasetFiltered] Split - Train: {len(train_idx)}, Val: {len(valid_idx)}, Test: {len(test_idx)}")
 
         return train_idx, valid_idx, test_idx

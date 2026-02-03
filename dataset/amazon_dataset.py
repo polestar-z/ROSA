@@ -37,9 +37,9 @@ def parse_multi_labels(label_str, num_classes):
     return multi_hot
 
 
-class PersonaDataset(BaseDataset):
+class AmazonDataset(BaseDataset):
     """
-    Persona Dataset for heterogeneous graph node classification.
+    Amazon Dataset for heterogeneous graph node classification.
 
     Expected data structure:
     - nodes/: Contains CSV files for each node type
@@ -48,7 +48,7 @@ class PersonaDataset(BaseDataset):
     This is a generic template. Adjust node and edge types according to your actual data.
     """
 
-    def __init__(self, name='persona', data_path=None, logger=None, *args, **kwargs):
+    def __init__(self, name='amazon', data_path=None, logger=None, *args, **kwargs):
         """
         Parameters
         ----------
@@ -56,18 +56,18 @@ class PersonaDataset(BaseDataset):
             Dataset name
         data_path : str
             Base path to the dataset directory containing nodes/ and edges/ folders
-            If None, will use default path: './openhgnn/dataset/data/persona/'
+            If None, will use default path: './amazon/'
         logger : optional
             Logger instance
         """
                                                      
         kwargs['logger'] = logger
-        super(PersonaDataset, self).__init__(*args, **kwargs)
+        super(AmazonDataset, self).__init__(*args, **kwargs)
         self.name = name
 
                                                
         if data_path is None:
-            self.data_path = './openhgnn/dataset/data/persona/'
+            self.data_path = './amazon/'
         else:
             self.data_path = data_path
 
@@ -76,14 +76,14 @@ class PersonaDataset(BaseDataset):
 
     def load_graph(self):
         """
-        Load Persona heterogeneous graph from CSV files.
+        Load Amazon heterogeneous graph from CSV files.
 
         Returns
         -------
         graph : dgl.DGLHeteroGraph
             The constructed heterogeneous graph
         """
-        print(f"[Persona Dataset] Loading from {self.data_path}")
+        print(f"[Amazon Dataset] Loading from {self.data_path}")
                  
         user_nodes = pd.read_csv(f"{self.data_path}nodes/user_embedding32.csv")
         product_nodes = pd.read_csv(f"{self.data_path}nodes/product-embedding.csv")
@@ -214,13 +214,13 @@ class PersonaDataset(BaseDataset):
                 target_nodes_df['test_mask'].values, dtype=torch.bool)
             print("  [Masks] Loaded train/val/test masks from CSV")
 
-        print(f"[Persona Dataset] Loading completed!\n")
+        print(f"[Amazon Dataset] Loading completed!\n")
         return graph
 
 
 if __name__ == '__main__':
                               
-    dataset = PersonaDataset(name='persona', data_path='./openhgnn/dataset/data/persona/')
+    dataset = AmazonDataset(name='amazon', data_path='./amazon/')
     print("Dataset loaded successfully!")
     print(f"Graph: {dataset.graph}")
     print(f"Num classes: {dataset.num_classes}")

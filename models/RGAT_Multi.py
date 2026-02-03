@@ -1,16 +1,3 @@
-"""
-RGAT_Multi: Relational Graph Attention Network for Multi-Label Node Classification
-
-This is a modified version of RGAT specifically designed for multi-label node classification
-on heterogeneous graphs. The key modifications are:
-1. Only returns logits for the target node type (instead of all node types)
-2. Supports multi-label classification via proper output dimensions
-3. Automatically detects the target node type from the graph
-
-Author: Based on OpenHGNN RGAT implementation
-Date: 2026-01-19
-"""
-
 import dgl
 import torch as th
 import torch.nn as nn

@@ -37,7 +37,7 @@ class MAGNN_Multi(BaseModel):
     Key modifications for multi-label classification:
     - Automatic target node type detection
     - Only returns output for the target node type (required for multi-label classification)
-    - Compatible with multi-label classification datasets (your_dataset_filtered, persona, imdb)
+    - Compatible with multi-label classification datasets (cite_dataset, amazon, imdb)
 
     Parameters
     ----------
@@ -93,57 +93,32 @@ class MAGNN_Multi(BaseModel):
             target_ntype = cls._detect_target_ntype(hg)
 
         ntypes = hg.ntypes
-        if args.dataset == 'imdb4MAGNN':
-                         
-            metapath_list = ['M-D-M', 'M-A-M', 'D-M-D', 'D-M-A-M-D', 'A-M-A', 'A-M-D-M-A']
-            edge_type_list = ['A-M', 'M-A', 'D-M', 'M-D']
-                                                                 
-            in_feats = {'M': 3066, 'D': 2081, 'A': 5257}
-            metapath_idx_dict = mp_instance_sampler(hg, metapath_list, 'imdb4MAGNN')
-
-        elif args.dataset == 'imdb_node_classification':
-                                                                
-                                     
-                                                                   
-            metapath_list = [
-                                                                                     
-                                                                                           
+        if args.dataset == 'imdb_node_classification':    
+            metapath_list = [                                
                 'movie-keyword-movie'                                           
             ]
             edge_type_list = [
-                                               
-                                                     
                 'movie-keyword', 'keyword-movie'
             ]
             metapath_idx_dict = mp_instance_sampler(hg, metapath_list, 'imdb_node_classification')
 
-        elif args.dataset == 'persona_node_classification':
-                                                                   
-                                    
-                                                        
+        elif args.dataset == 'amazon_node_classification':
             metapath_list = [
                 'user-product-user'                                                  
             ]
             edge_type_list = [
                 'user-product', 'product-user'
             ]
-            metapath_idx_dict = mp_instance_sampler(hg, metapath_list, 'persona_node_classification')
+            metapath_idx_dict = mp_instance_sampler(hg, metapath_list, 'amazon_node_classification')
 
-        elif args.dataset == 'your_dataset_filtered':
-                                                                         
-                                     
-                                                            
-                                            
+        elif args.dataset == 'cite_dataset':
             metapath_list = [
-                                                              
                 'paper-substrate-paper'                   
-                                                        
             ]
             edge_type_list = [
-                                                    
                 'paper-substrate', 'substrate-paper'
             ]
-            metapath_idx_dict = mp_instance_sampler(hg, metapath_list, 'your_dataset_filtered')
+            metapath_idx_dict = mp_instance_sampler(hg, metapath_list, 'cite_dataset')
 
         else:
             raise NotImplementedError("MAGNN_Multi on dataset {} has not been implemented".format(args.dataset))
@@ -318,18 +293,12 @@ class MAGNN_layer(nn.Module):
         self.dst_ntypes = dst_ntypes
         self.encoder_type = encoder_type
         self.last_layer = last_layer
-
-                                                              
-                                                                                      
+                       
         in_feats_dst_meta = tuple((in_feats, in_feats))
-
         self.intra_attn_layers = nn.ModuleDict()
         for metapath in self.metapath_list:
             self.intra_attn_layers[metapath] =\
                 MAGNN_attn_intra(in_feats=in_feats_dst_meta, out_feats=in_feats, num_heads=num_heads)
-
-                                                                                                          
-                                                               
         self.inter_linear = nn.ModuleDict()
         self.inter_attn_vec = nn.ModuleDict()
         for ntype in dst_ntypes:
@@ -341,7 +310,6 @@ class MAGNN_layer(nn.Module):
 
                                                 
         if encoder_type == 'RotateE':
-                                                                           
             r_vec_ = nn.Parameter(th.empty(size=(len(edge_type_list) // 2, in_feats * num_heads // 2, 2)))
             nn.init.xavier_normal_(r_vec_.data, gain=1.414)
             self.r_vec = F.normalize(r_vec_, p=2, dim=2)
@@ -350,9 +318,7 @@ class MAGNN_layer(nn.Module):
             self.r_vec = self.r_vec.reshape(r_vec_.shape[0] * 2, r_vec_.shape[1], 2)
             self.r_vec_dict = nn.ParameterDict()
             for i, edge_type in zip(range(len(edge_type_list)), edge_type_list):
-                self.r_vec_dict[edge_type] = nn.Parameter(self.r_vec[i])
-
-                                                                                                
+                self.r_vec_dict[edge_type] = nn.Parameter(self.r_vec[i])           
                                                                            
         elif encoder_type == 'Linear':
             self.encoder_linear =\
@@ -371,27 +337,14 @@ class MAGNN_layer(nn.Module):
         for _metapath in self.metapath_list:
             feat_intra[_metapath] =\
                 self.intra_metapath_trans(feat_dict, metapath=_metapath, metapath_idx_dict=metapath_idx_dict)
-
-                                              
         feat_inter =\
             self.inter_metapath_trans(feat_dict=feat_dict, feat_intra=feat_intra, metapath_list=self.metapath_list)
-
-                           
         feat_final = self.output_projection(feat_inter=feat_inter)
-
-                                                                                                    
-                                                     
         return feat_final, feat_inter
 
     def intra_metapath_trans(self, feat_dict, metapath, metapath_idx_dict):
-
-        metapath_idx = metapath_idx_dict[metapath]
-
-                                    
-                                                                                          
+        metapath_idx = metapath_idx_dict[metapath]       
         intra_metapath_feat = self.encoder(feat_dict, metapath, metapath_idx)
-
-                                                                    
         feat_intra =\
             self.intra_attn_layers[metapath]([intra_metapath_feat, feat_dict[metapath.split('-')[0]]],
                                              metapath, metapath_idx)
@@ -409,27 +362,13 @@ class MAGNN_layer(nn.Module):
 
         for ntype in self.ntypes:
             if ntype in self.dst_ntypes:
-                                                                                            
-                                             
-                                                                       
                 metapaths = np.array(metapath_list)[[meta.split('-')[0] == ntype for meta in metapath_list]]
-
                 if len(metapaths) == 1:
-                                                                                        
-                                                                      
                     feat_inter[ntype] = feat_intra[metapaths[0]]
                 else:
-                                                                                 
-                                                   
-                                                                      
                     meta_b = th.tensor(itemgetter(*metapaths)(meta_s))
-                                                                                         
-                                                                      
                     meta_b = F.softmax(meta_b, dim=0)
-                                                                
-                                                                          
                     meta_feat = itemgetter(*metapaths)(feat_intra)
-                                                            
                     feat_inter[ntype] = th.stack([meta_b[i] * meta_feat[i] for i in range(len(meta_b))], dim=0).sum(dim=0)
             else:
                 feat_inter[ntype] = feat_dict[ntype]
@@ -583,7 +522,7 @@ def mp_instance_sampler(g, metapath_list, dataset):
     metapath instances will be extracted directly from the disk if they exists.
     """
 
-    file_dir = 'openhgnn/output/MAGNN/'
+    file_dir = '/output/MAGNN/'
     os.makedirs(file_dir, exist_ok=True)
     file_addr = file_dir + '{}'.format(dataset) + '_mp_inst.pkl'
     test = True        

@@ -133,8 +133,8 @@ class COATrainer(BaseFlow):
             self.optimizer.step()
         return loss_all
     def evaluate(self, split=None):
-        ck_pt = torch.load('./openhgnn/output/COA/epoch7COA.pt')
-        log = open('./openhgnn/output/COA/train.log', 'w')
+        ck_pt = torch.load('./output/COA/epoch7COA.pt')
+        log = open('./output/COA/train.log', 'w')
         self.model.load_state_dict(ck_pt)
         self.model.eval()
         with torch.no_grad():

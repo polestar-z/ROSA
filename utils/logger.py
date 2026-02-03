@@ -125,7 +125,7 @@ class Logger:
             >>> logger.info(train_result)
         """
         init(autoreset=True)
-        LOGROOT = f'./openhgnn/output/{config.model_name}/'
+        LOGROOT = f'./output/{config.model_name}/'
         dir_name = os.path.dirname(LOGROOT)
         ensure_dir(dir_name)
 

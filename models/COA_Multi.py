@@ -1,7 +1,4 @@
                       
-                       
-                                                                
-
 import math
 import dgl
 import torch
@@ -17,19 +14,7 @@ from ..utils import to_hetero_feat
 @register_model('COA_Multi')
 class COA_Multi(BaseModel):
     r"""
-    COA (Heterogeneous Graph Transformer) adapted for multi-label classification
-
-    Key Features:
-    1. Supports multi-label classification with FloatTensor labels
-    2. Uses BCEWithLogitsLoss for training
-    3. Compatible with multiple datasets (your_dataset_filtered, persona, imdb)
-    4. Automatically detects target node type
-
-    Differences from original COA:
-    - Output layer is specific to target node type only
-    - Returns dict with only target node type predictions
-    - Configurable target node type via args or auto-detection
-
+    
     Parameters
     ----------
     in_dim: int
@@ -133,11 +118,8 @@ class COA_Multi(BaseModel):
 
         print(f"[COA_Multi] Initializing model with target node type: '{target_ntype}'")
         print(f"[COA_Multi] Output dimension (num_classes): {out_dim}")
-
-                              
         self.coa_layers = nn.ModuleList()
 
-                     
         self.coa_layers.append(
             COAConv(
                 in_dim,
@@ -236,13 +218,7 @@ class COA_Multi(BaseModel):
 
 
 class COAConv(nn.Module):
-    r"""
-    Heterogeneous Graph Transformer Convolution
-
-    This is a copy of the COAConv from COA.py to ensure independence.
-    Implements the core COA message passing mechanism.
-    """
-
+    
     def __init__(self,
                  in_size,
                  head_size,
@@ -325,29 +301,17 @@ class COAConv(nn.Module):
             k = self.linear_k(x_src, srcntype, presorted).view(-1, self.num_heads, self.head_size)
             q = self.linear_q(x_dst, dstntype, presorted).view(-1, self.num_heads, self.head_size)
             v = self.linear_v(x_src, srcntype, presorted).view(-1, self.num_heads, self.head_size)
-
-                            
             g.srcdata['k'] = k
             g.dstdata['q'] = q
             g.srcdata['v'] = v
             g.edata['etype'] = etype
-
-                                            
             g.apply_edges(self.message)
 
-                                                
             g.edata['m'] = g.edata['m'] * edge_softmax(g, g.edata['a']).unsqueeze(-1)
-
-                                
             g.update_all(fn.copy_e('m', 'm'), fn.sum('m', 'h'))
-
-                                       
             h = g.dstdata['h'].view(-1, self.num_heads * self.head_size)
-
-                                         
             h = self.drop(self.linear_a(h, dstntype, presorted))
 
-                                 
             if self.use_norm:
                 h = self.norm(h)
 

@@ -43,8 +43,8 @@ def parse_multi_labels(label_str, num_classes=107):
     return multi_hot
 
 
-class YourDataset:
-    def __init__(self, name, raw_dir=''):
+class CITEDataset:
+    def __init__(self, name, raw_dir='', *args, **kwargs):
         self.name = name
         self.raw_dir = raw_dir
         self.graph, self.category, self.num_classes, self.in_dim = self.load_data()

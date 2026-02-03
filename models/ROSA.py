@@ -180,10 +180,10 @@ class BranchConsistencyLoss(nn.Module):
 class HybridLayer(nn.Module):
     def __init__(self, in_dim, hidden_dim, coa_num_heads, aoa_num_heads,
                  num_etypes, ntypes, meta_paths_dict, dropout, use_norm,
-                 exclude_persona_in_coa=False, fusion_type='gated', gate_type='bidirectional'):
+                 exclude_amazon_in_coa=False, fusion_type='gated', gate_type='bidirectional'):
         super().__init__()
         self.ntypes = ntypes
-        self.exclude_persona_in_coa = exclude_persona_in_coa
+        self.exclude_amazon_in_coa = exclude_amazon_in_coa
         self.fusion_type = fusion_type
         self.gate_type = gate_type
 
@@ -238,8 +238,8 @@ class HybridLayer(nn.Module):
             return h_fused_dict
 
     def _coa_forward(self, hg, h_dict):
-        if self.exclude_persona_in_coa and 'persona' in hg.ntypes:
-            return self._coa_forward_exclude_persona(hg, h_dict)
+        if self.exclude_amazon_in_coa and 'amazon' in hg.ntypes:
+            return self._coa_forward_exclude_amazon(hg, h_dict)
         else:
             return self._coa_forward_original(hg, h_dict)
 
@@ -261,7 +261,7 @@ class HybridLayer(nn.Module):
 
         return h_coa_dict
 
-    def _coa_forward_exclude_persona(self, hg, h_dict):
+    def _coa_forward_exclude_amazon(self, hg, h_dict):
         exclude_dst_ntype = 'persona'
         kept_etypes = []
         for canonical_etype in hg.canonical_etypes:
@@ -326,7 +326,7 @@ class ROSA(BaseModel):
             if len(meta_paths_dict) == 0:
                 ntype_meta_paths_dict[ntype] = extract_metapaths(ntype, hg.canonical_etypes)
 
-        exclude_persona_in_coa = 'persona' in hg.ntypes
+        exclude_amazon_in_coa = 'amazon' in hg.ntypes
 
         fusion_type = getattr(args, 'fusion_type', 'gated')
         gate_type = getattr(args, 'gate_type', 'bidirectional')
@@ -348,7 +348,7 @@ class ROSA(BaseModel):
             meta_paths_dict=ntype_meta_paths_dict,
             dropout=args.dropout,
             use_norm=args.norm,
-            exclude_persona_in_coa=exclude_persona_in_coa,
+            exclude_amazon_in_coa=exclude_amazon_in_coa,
             fusion_type=fusion_type,
             gate_type=gate_type,
             residual_type=residual_type,
@@ -359,7 +359,7 @@ class ROSA(BaseModel):
 
     def __init__(self, in_dim, hidden_dim, out_dim, num_layers,
                  coa_num_heads, aoa_num_heads, num_etypes, ntypes,
-                 meta_paths_dict, dropout, use_norm, exclude_persona_in_coa=False,
+                 meta_paths_dict, dropout, use_norm, exclude_amazon_in_coa=False,
                  fusion_type='gated', gate_type='bidirectional', residual_type='adaptive',
                  use_consistency_loss=False, consistency_loss_type='cosine', consistency_temperature=0.1):
         super().__init__()
@@ -385,7 +385,7 @@ class ROSA(BaseModel):
                     meta_paths_dict=meta_paths_dict,
                     dropout=dropout,
                     use_norm=use_norm,
-                    exclude_persona_in_coa=exclude_persona_in_coa,
+                    exclude_amazon_in_coa=exclude_amazon_in_coa,
                     fusion_type=fusion_type,
                     gate_type=gate_type
                 )

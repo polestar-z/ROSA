@@ -39,3 +39,5 @@ PY
 - You can override them directly in `Experiment(...)` (for example `max_epoch=10`)
 
 ## Dataset
+
+https://huggingface.co/datasets/kg4sci/ROSA/tree/main

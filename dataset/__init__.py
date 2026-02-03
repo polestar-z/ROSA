@@ -53,8 +53,8 @@ def build_dataset(dataset, task, *args, **kwargs):
         return dataset
 
     dataset_name = dataset
-    if dataset_name == "your_dataset_filtered":
-        dataset_name = "my_custom_node_classification_filtered"
+    if dataset_name == "cite_dataset":
+        dataset_name = "cite_node_classification"
 
     if not try_import_task_dataset(task):
         raise ValueError(f"Unsupported task dataset: {task}")
@@ -67,8 +67,8 @@ def build_dataset(dataset, task, *args, **kwargs):
 from .NodeClassificationDataset import (              
     NodeClassificationDataset,
     IMDBNodeClassification,
-    PersonaNodeClassification,
-    ChemistryDatasetFiltered,
+    AmazonNodeClassification,
+    CITENodeClassification,
 )
 
 __all__ = [
@@ -82,8 +82,8 @@ __all__ = [
     "CLASS_DATASETS",
     "NodeClassificationDataset",
     "IMDBNodeClassification",
-    "PersonaNodeClassification",
-    "ChemistryDatasetFiltered",
+    "AmazonNodeClassification",
+    "CITENodeClassification",
 ]
 
 classes = __all__
