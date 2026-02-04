@@ -1,41 +1,31 @@
 # ROSA
 
-基于 DGL 的异构图节点分类实验代码。
+RoSA: Role-Separated Attention for Multi-label Heterogeneous Graphs
 
-## 环境准备
-- Python 3.8+（建议）
-- 依赖：`torch`、`dgl`、`numpy`、`pandas`、`scikit-learn`、`tqdm`、`tensorboard`、`colorlog`、`colorama`
-- 安装示例（请根据 CUDA 版本选择合适的 torch/dgl 版本）：
+## Environment
+- Python 3.8+
+- Dependencies: requirements.txt
 
-```bash
-pip install torch dgl numpy pandas scikit-learn tqdm tensorboard colorlog colorama
-```
-
-## 运行
-1. 进入仓库根目录
-2. 准备好数据集（见 Dataset 部分）
-3. 运行训练
+## Run
+1. From the repo root
+2. Prepare the dataset (see Dataset)
+3. Run training
 
 ```bash
-export PYTHONPATH="$(pwd)/..:$PYTHONPATH"
-python - <<'PY'
-from ROSA import Experiment
-
-Experiment(
-    model="ROSA",
-    dataset="imdb_node_classification",
-    task="node_classification",
-    gpu=-1,
-    use_distributed=False,
-).run()
-PY
+python main.py -m ROSA -d dataset -t node_classification -g 1 --multi_label
 ```
 
-- 单机单卡：将 `gpu` 改为 `0`/`1` 等即可
-- 日志与 TensorBoard 输出默认在 `./openhgnn/output/<model_name>/`
+- dataset optional: imdb_node_classification / amazon_node_classification / cite_node_classification
+- Single GPU: set `gpu=0` (or another index)
+- Logs and TensorBoard output go to `/output/<model_name>/`
+- models optional: ROSA / AOA_Multi / COA_Multi
 
-## 配置
-- 默认超参在 `config.ini`
-- 也可以在 `Experiment(...)` 里直接覆盖（例如 `max_epoch=10`）
+## Config
+- Default hyperparameters live in `config.ini`
+- You can override them directly in `Experiment(...)` (for example `max_epoch=10`)
 
 ## Dataset
+
+- https://huggingface.co/datasets/kg4sci/ROSA/tree/main
+
+- place it on /ROSA/dataset
